@@ -1,0 +1,205 @@
+C51 COMPILER V9.60.0.0   UART0                                                             03/23/2022 11:03:06 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE UART0
+OBJECT MODULE PLACED IN .\Objects\uart0.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE Source\uart0.c LARGE OPTIMIZE(0,SPEED) BROWSE INCDIR(.\Source;C:\Keil_v5
+                    -\C51\INC) DEFINE(C51_COMPILER) DEBUG OBJECTEXTEND PRINT(.\Listings\uart0.lst) TABS(2) OBJECT(.\Objects\uart0.obj)
+
+line level    source
+
+   1          /**
+   2          ******************************************************************************
+   3          * @file    UART0.C
+   4          * @author  Harshal
+   5          * @version 01.00
+   6          * @date    25-Aug-2021
+   7          * @brief   System Initialization file for   module.
+   8          *          + Initialization / configuration of all hardware modules is done
+   9          *          in this file.
+  10          ******************************************************************************
+  11          * @attention
+  12          * @{
+  13          * <h2><center>&copy; Copyright 2017  </center></h2>
+  14          *                     All rights reserved.
+  15          * An unpublished work by  Limited . This material contains
+  16          * CONFIDENTIAL INFORMATION that is the property of   Limited .
+  17          * Any unauthorized use, duplication or disclosure is prohibited.
+  18          * @}
+  19          ******************************************************************************
+  20          */
+  21          
+  22          /*
+  23          *******************************************************************************
+  24          *                               FILE HISTORY
+  25          *******************************************************************************
+  26          * Change    : 00
+  27          * Author    : Harshal
+  28          * Date      : 25-Aug-2021
+  29          * Brief     : created file
+  30          *
+  31          *******************************************************************************
+  32          */
+  33          
+  34          
+  35          /*
+  36           *******************************************************************************
+  37           *                                INCLUDE FILES
+  38           *******************************************************************************
+  39           */
+  40          
+  41          #include <uart0.h>
+  42          
+  43          /*
+  44           *******************************************************************************
+  45           *                          PRIVATE MACROS & CONSTANTS
+  46           *******************************************************************************
+  47           */
+  48          typedef struct
+  49          {
+  50            uint8_t *buffer_ptr;
+  51            uint8_t ctr;
+  52            bool_t is_tx_over ;
+  53          }uart_tx_t;
+  54          
+C51 COMPILER V9.60.0.0   UART0                                                             03/23/2022 11:03:06 PAGE 2   
+
+  55          /*
+  56           *******************************************************************************
+  57           *                         PRIVATE VARIABLE DECLARATION
+  58           *******************************************************************************
+  59           */
+  60          
+  61          static uart_tx_t uart_tx;
+  62          
+  63          
+  64          /*
+  65           *******************************************************************************
+  66           *                         PRIVATE FUNCTION DECLARATION
+  67           *******************************************************************************
+  68           */
+  69          
+  70          /**
+  71           ******************************************************************************
+  72           * @fn void INT_UART0(void)
+  73           ******************************************************************************
+  74           * @brief  void INT_UART0(void)
+  75           * @note   None
+  76           * @param  None
+  77           * @retval None
+  78           ******************************************************************************
+  79           */
+  80          #ifdef C51_COMPILER
+  81          void INT_UART0(void) interrupt 4 using 2
+  82          #else
+              void INT_UART0(void) __interrupt  (4)
+              #endif
+  85          { 
+  86   1        uint8_t rx_data = 0;
+  87   1        SFRPI = 0;
+  88   1        if((S0CON & 0x01) == 0x01)
+  89   1        {
+  90   2          S0CON &= 0xFE;
+  91   2          rx_data = S0BUF;
+  92   2          UartRxPrcs(rx_data);
+  93   2        }
+  94   1        else
+  95   1        {
+  96   2          S0CON &= 0xFD;
+  97   2          if(uart_tx.ctr > 0)
+  98   2          {
+  99   3            S0BUF = *uart_tx.buffer_ptr++;
+ 100   3            uart_tx.ctr--;
+ 101   3          }
+ 102   2          else
+ 103   2          {
+ 104   3            uart_tx.is_tx_over = TRUE;
+ 105   3          }
+ 106   2        }
+ 107   1      }// End of INT_UART0
+ 108          
+ 109          /**
+ 110           ******************************************************************************
+ 111           * @fn void UART0_Transmit( uint8_t *buff_ptr , int len )
+ 112           ******************************************************************************
+ 113           * @brief
+ 114           * @note   None
+ 115           * @param  None
+ 116           * @retval None
+C51 COMPILER V9.60.0.0   UART0                                                             03/23/2022 11:03:06 PAGE 3   
+
+ 117           ******************************************************************************
+ 118           */
+ 119          void UART0_Transmit( uint8_t *buff_ptr , uint8_t len )
+ 120          {
+ 121   1        uart_tx.buffer_ptr = buff_ptr;
+ 122   1        uart_tx.ctr = len;
+ 123   1        uart_tx.is_tx_over = FALSE;
+ 124   1        SFRPI = 0;
+ 125   1        S0BUF = *uart_tx.buffer_ptr++;
+ 126   1        uart_tx.ctr--;
+ 127   1      
+ 128   1        while(FALSE == UART0_IsTxOver());
+ 129   1      
+ 130   1      }// End of UART0_Transmit
+ 131          
+ 132          /**
+ 133           ******************************************************************************
+ 134           * @fn bool_t UART0_IsTxOver(void)
+ 135           ******************************************************************************
+ 136           * @brief
+ 137           * @note   None
+ 138           * @param  None
+ 139           * @retval None
+ 140           ******************************************************************************
+ 141           */
+ 142          bool_t UART0_IsTxOver(void)
+ 143          {
+ 144   1        return(uart_tx.is_tx_over);
+ 145   1      }// End of UART0_IsTxOver
+ 146          
+ 147          
+ 148          /**
+ 149           ******************************************************************************
+ 150           * @fn void Initial_UART0 (void)
+ 151           ******************************************************************************
+ 152           * @brief
+ 153           * @note   None
+ 154           * @param  None
+ 155           * @retval None
+ 156           ******************************************************************************
+ 157           */
+ 158          void Initial_UART0( void )
+ 159          {
+ 160   1        TMOD |= 0x20;                                  // Set Timer1 at Mode 1
+ 161   1        CKCON0 |= AFS;                                 // IHRCO switch to 11.0592MHz.
+ 162   1        SFRPI = 0;
+ 163   1        S0CON = 0x50;                                  // Set UART0 at 8bit Mode
+ 164   1        TH1 = 0xFA;                                    // BR = 115200@11.059Mhz
+ 165   1        TL1 = 0xFA;                                    //
+ 166   1        AUXR2 = T1X12;                                 //
+ 167   1        PCON0 |= SMOD1;                                //
+ 168   1      
+ 169   1        uart_tx.is_tx_over = TRUE;
+ 170   1      
+ 171   1      }//End of Initial_UART0
+ 172          
+ 173          
+ 174          
+ 175          /*-------------------------------END OF FILE----------------------------------*/
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+C51 COMPILER V9.60.0.0   UART0                                                             03/23/2022 11:03:06 PAGE 4   
+
+   CODE SIZE        =    252    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     10    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

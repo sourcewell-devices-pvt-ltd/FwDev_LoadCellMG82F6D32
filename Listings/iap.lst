@@ -1,0 +1,217 @@
+C51 COMPILER V9.60.0.0   IAP                                                               03/23/2022 11:03:06 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE IAP
+OBJECT MODULE PLACED IN .\Objects\iap.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE Source\iap.c LARGE OPTIMIZE(0,SPEED) BROWSE INCDIR(.\Source;C:\Keil_v5\C
+                    -51\INC) DEFINE(C51_COMPILER) DEBUG OBJECTEXTEND PRINT(.\Listings\iap.lst) TABS(2) OBJECT(.\Objects\iap.obj)
+
+line level    source
+
+   1          /**
+   2           ******************************************************************************
+   3           * @file    IAP.C
+   4           * @author  Harshal
+   5           * @version 01.00
+   6           * @date    25-Aug-2021
+   7           * @brief   System Initialization file for   module.
+   8           *           + Initialization / configuration of all hardware modules is done
+   9           *           in this file.
+  10           ******************************************************************************
+  11           * @attention
+  12           * @{
+  13           * <h2><center>&copy; Copyright 2017  </center></h2>
+  14           *                      All rights reserved.
+  15           * An unpublished work by  Limited . This material contains
+  16           * CONFIDENTIAL INFORMATION that is the property of   Limited .
+  17           * Any unauthorized use, duplication or disclosure is prohibited.
+  18           * @}
+  19           ******************************************************************************
+  20           */
+  21          
+  22          /*
+  23           *******************************************************************************
+  24           *                               FILE HISTORY
+  25           *******************************************************************************
+  26           * Change    : 00
+  27           * Author    : Harshal
+  28           * Date      : 25-Aug-2021
+  29           * Brief     : created file
+  30           *
+  31           *******************************************************************************
+  32           */
+  33          
+  34          
+  35          /*
+  36           *******************************************************************************
+  37           *                                INCLUDE FILES
+  38           *******************************************************************************
+  39           */
+  40          
+  41          #include"iap.h"
+  42          
+  43          /*
+  44           *******************************************************************************
+  45           *                          PRIVATE MACROS & CONSTANTS
+  46           *******************************************************************************
+  47           */
+  48          
+  49          #define ISP_ENABLE              0x80              // Set ISP Enable
+  50          #define ISP_DISABLE             0x00              // Set ISP Disable
+  51          #define IAP_START_ADDR_MSB      (0x7C)
+  52          
+  53          /*
+  54           *******************************************************************************
+C51 COMPILER V9.60.0.0   IAP                                                               03/23/2022 11:03:06 PAGE 2   
+
+  55           *                         PRIVATE VARIABLE DECLARATION
+  56           *******************************************************************************
+  57           */
+  58          
+  59          //NONE
+  60          
+  61          /*
+  62           *******************************************************************************
+  63           *                         PRIVATE FUNCTION DECLARATION
+  64           *******************************************************************************
+  65           */
+  66          
+  67          /**
+  68           ******************************************************************************
+  69           * @fn void Initial_IAP(void)
+  70           ******************************************************************************
+  71           * @brief 
+  72           * @note   None
+  73           * @param  None
+  74           * @retval None
+  75           ******************************************************************************
+  76           */
+  77          void Initial_IAP(void)
+  78          { 
+  79   1        CKCON0 = 80;                                   // IHRCO = 11.059Mhz
+  80   1      } //End of Initial_IAP
+  81          
+  82          /**
+  83           ******************************************************************************
+  84           * @fn void IAP_Erase(uint8_t AddrH, uint8_t Page_Cnt)
+  85           ******************************************************************************
+  86           * @brief float read()
+  87           * @note   None
+  88           * @param  None
+  89           * @retval None
+  90           ******************************************************************************
+  91           */
+  92          void IAP_Erase(uint8_t addr, uint8_t Page_Cnt)
+  93          {
+  94   1        CKCON1 = CKCON1 & 0xC0 ;
+  95   1        CKCON1 = CKCON1 | (11 -1 & 0x3F) ;
+  96   1        while( Page_Cnt )
+  97   1        {
+  98   2          //T0Cnt = 0;                                   // clear Over Time
+  99   2          IFADRH = addr;
+ 100   2          IFADRL = 0x00;
+ 101   2          IFMT = 0x03;                                 // erase
+ 102   2          ISPCR = ISP_ENABLE;
+ 103   2          SCMD = 0x46;
+ 104   2          SCMD = 0xB9;
+ 105   2          ISPCR = ISP_DISABLE;
+ 106   2          Page_Cnt--;
+ 107   2          addr += 2;                                  // For next PAGE, 512 bytes
+ 108   2        }
+ 109   1      }// End of IAP_Erase
+ 110          
+ 111          /**
+ 112           ******************************************************************************
+ 113           * @fn void IAP_Program(uint8_t addr, uint8_t *data_ptr)
+ 114           ******************************************************************************
+ 115           * @brief
+ 116           * @note   None
+C51 COMPILER V9.60.0.0   IAP                                                               03/23/2022 11:03:06 PAGE 3   
+
+ 117           * @param  None
+ 118           * @retval None
+ 119           ******************************************************************************
+ 120           */
+ 121          
+ 122          void IAP_Program(uint8_t addr, uint8_t *data_ptr, uint8_t data_len)
+ 123          {
+ 124   1        uint8_t ctr = 0;
+ 125   1        uint8_t temp_buff[MEM_DATA_SIZE];
+ 126   1      
+ 127   1        //Copy to temporary buffer as page erase in next step
+ 128   1        IAP_Read(0 , temp_buff, MEM_DATA_SIZE);
+ 129   1        IAP_Erase(0x7C, 1);
+ 130   1      
+ 131   1        //Copy only the required data into temp_buff
+ 132   1        for(ctr = 0; ctr < data_len; ctr++)
+ 133   1        {
+ 134   2          temp_buff[addr + ctr] = *data_ptr++;
+ 135   2        }
+ 136   1      
+ 137   1        //Program the complete temp buff in memory
+ 138   1        for(ctr = 0; ctr < MEM_DATA_SIZE; ctr++)
+ 139   1        {
+ 140   2          CKCON1 = CKCON1 & 0xC0 ;
+ 141   2          CKCON1 = CKCON1 | (11 -1 & 0x3F) ;
+ 142   2          IFADRH = IAP_START_ADDR_MSB;
+ 143   2          IFADRL = ctr;
+ 144   2          IFD = temp_buff[ctr];
+ 145   2          IFMT = 0x02;
+ 146   2          ISPCR = ISPCR | ISP_ENABLE;
+ 147   2          SCMD = 0x46;
+ 148   2          SCMD = 0xB9;
+ 149   2          ISPCR = ISPCR & 0x7F ;
+ 150   2        }
+ 151   1      }// End of IAP_Program
+ 152          
+ 153          /**
+ 154           ******************************************************************************
+ 155           * @fn void IAP_Read(uint16_t addr, uint8_t *data_ptr)
+ 156           ******************************************************************************
+ 157           * @brief
+ 158           * @note   None
+ 159           * @param  None
+ 160           * @retval None
+ 161           ******************************************************************************
+ 162           */
+ 163          
+ 164          void IAP_Read(uint8_t addr, uint8_t *data_ptr, uint8_t data_len)
+ 165          {
+ 166   1        uint8_t ctr = 0;
+ 167   1      
+ 168   1        for(ctr = 0; ctr < data_len; ctr++)
+ 169   1        {
+ 170   2          CKCON1 = CKCON1 & 0xC0 ;
+ 171   2          CKCON1 = CKCON1 | (11 -1 & 0x3F) ;
+ 172   2          IFADRH = IAP_START_ADDR_MSB;
+ 173   2          IFADRL = addr + ctr;
+ 174   2          IFMT = 0x01;
+ 175   2          IFD = 0x00 ;
+ 176   2      
+ 177   2          ISPCR = ISPCR |ISP_ENABLE;
+ 178   2          SCMD = 0x46;
+C51 COMPILER V9.60.0.0   IAP                                                               03/23/2022 11:03:06 PAGE 4   
+
+ 179   2          SCMD = 0xB9;
+ 180   2          ISPCR = ISPCR & 0x7F ;
+ 181   2      
+ 182   2          *data_ptr++ = IFD;
+ 183   2        }
+ 184   1      
+ 185   1      }//End of IAP_Read
+ 186          
+ 187          /*-------------------------------END OF FILE----------------------------------*/
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    379    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     26    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

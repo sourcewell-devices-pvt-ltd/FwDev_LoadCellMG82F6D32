@@ -1,0 +1,161 @@
+C51 COMPILER V9.60.0.0   MAIN                                                              03/23/2022 11:03:06 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE Source\main.c LARGE OPTIMIZE(0,SPEED) BROWSE INCDIR(.\Source;C:\Keil_v5\
+                    -C51\INC) DEFINE(C51_COMPILER) DEBUG OBJECTEXTEND PRINT(.\Listings\main.lst) TABS(2) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          /**
+   2           ******************************************************************************
+   3           * @file    main.c
+   4           * @author  Harshal
+   5           * @version 01.00
+   6           * @date    25-Aug-2021
+   7           * @brief   System Initialization file for   module.
+   8           *           + Initialization / configuration of all hardware modules is done
+   9           *           in this file.
+  10           ******************************************************************************
+  11           * @attention
+  12           * @{
+  13           * <h2><center>&copy; Copyright 2017  </center></h2>
+  14           *                      All rights reserved.
+  15           * An unpublished work by  Limited . This material contains
+  16           * CONFIDENTIAL INFORMATION that is the property of   Limited .
+  17           * Any unauthorized use, duplication or disclosure is prohibited.
+  18           * @}
+  19           ******************************************************************************
+  20           */
+  21          
+  22          /*
+  23           *******************************************************************************
+  24           *                               FILE HISTORY
+  25           *******************************************************************************
+  26           * Change    : 00
+  27           * Author    : Harshal
+  28           * Date      : 25-Aug-2021
+  29           * Brief     : created file
+  30           *
+  31           *******************************************************************************
+  32           */
+  33          
+  34          
+  35          /*
+  36           *******************************************************************************
+  37           *                                INCLUDE FILES
+  38           *******************************************************************************
+  39           */
+  40          
+  41          #include "main.h"
+  42          
+  43          #ifdef SDCC_COMPILER
+              extern void INT_UART0(void) __interrupt (4);
+              extern void INT_TWSI(void) __interrupt  (12);
+              extern void INT_TIMER0(void) __interrupt (1) ;
+              #endif
+  48          
+  49          /*
+  50           *******************************************************************************
+  51           *                          PRIVATE MACROS & CONSTANTS
+  52           *******************************************************************************
+  53           */
+  54          
+C51 COMPILER V9.60.0.0   MAIN                                                              03/23/2022 11:03:06 PAGE 2   
+
+  55          //None
+  56          
+  57          /*
+  58           *******************************************************************************
+  59           *                         PRIVATE VARIABLE DECLARATION
+  60           *******************************************************************************
+  61           */
+  62          
+  63          //None
+  64          
+  65          /*
+  66           *******************************************************************************
+  67           *                         PRIVATE FUNCTION DECLARATION
+  68           *******************************************************************************
+  69           */
+  70          
+  71          /**
+  72           ******************************************************************************
+  73           * @fn  void main(void)
+  74           ******************************************************************************
+  75           * @brief 
+  76           * @note   None
+  77           * @param  None
+  78           * @retval None
+  79           ******************************************************************************
+  80           */
+  81          void main(void)
+  82          { 
+  83   1        uint32_t timer = 0;
+  84   1      //  static uint32_t led_toggle_timer = 0;
+  85   1        
+  86   1        typedef enum
+  87   1        {
+  88   1          LOAD_CELL_PRCS_STATE,
+  89   1          COMM_PRCS_STATE,
+  90   1          I2C_COMM_PRCS_STATE
+  91   1        }main_state_t;
+  92   1      
+  93   1        main_state_t main_state = LOAD_CELL_PRCS_STATE; 
+  94   1      
+  95   1        Sys_Init();
+  96   1      
+  97   1      //  UART0_Transmit("Hello World\n", 12);
+  98   1      
+  99   1        while(1)
+ 100   1      
+ 101   1        {
+ 102   2      //    if(TRUE == (SysTick_IsTimeOutOccurred(&timer , 20)))
+ 103   2      //    {
+ 104   2      //      UART0_Transmit("Hello World\n", 12);
+ 105   2      //    }
+ 106   2          
+ 107   2      //      if(TRUE == SysTick_IsTimeOutOccurred(&led_toggle_timer, 5))
+ 108   2      //  {
+ 109   2      //    SFRPI=1;                                  
+ 110   2      //    P6 ^= 2;                                    //This is to set pin 6.1 toggle
+ 111   2      //    SFRPI=0;
+ 112   2      //  }
+ 113   2          
+ 114   2          switch(main_state)
+ 115   2          {
+ 116   3          case LOAD_CELL_PRCS_STATE:
+C51 COMPILER V9.60.0.0   MAIN                                                              03/23/2022 11:03:06 PAGE 3   
+
+ 117   3            LoadCellPrcs();
+ 118   3            main_state = COMM_PRCS_STATE;
+ 119   3            break;
+ 120   3          case COMM_PRCS_STATE:
+ 121   3            CommPrcs();
+ 122   3            main_state = I2C_COMM_PRCS_STATE;
+ 123   3            break;
+ 124   3          case I2C_COMM_PRCS_STATE:
+ 125   3            I2cCommPrcs();
+ 126   3            main_state = LOAD_CELL_PRCS_STATE;
+ 127   3            break;
+ 128   3          }
+ 129   2        }
+ 130   1      } //End of main
+ 131          
+ 132          
+ 133          /*-------------------------------END OF FILE----------------------------------*/
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     75    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      5    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

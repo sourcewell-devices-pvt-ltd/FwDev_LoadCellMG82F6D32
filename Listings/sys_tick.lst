@@ -1,0 +1,201 @@
+C51 COMPILER V9.60.0.0   SYS_TICK                                                          03/23/2022 11:03:06 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE SYS_TICK
+OBJECT MODULE PLACED IN .\Objects\sys_tick.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE Source\sys_tick.c LARGE OPTIMIZE(0,SPEED) BROWSE INCDIR(.\Source;C:\Keil
+                    -_v5\C51\INC) DEFINE(C51_COMPILER) DEBUG OBJECTEXTEND PRINT(.\Listings\sys_tick.lst) TABS(2) OBJECT(.\Objects\sys_tick.ob
+                    -j)
+
+line level    source
+
+   1          /**
+   2          ******************************************************************************
+   3          * @file    sys_tick.c
+   4          * @author  Nasreen Shaikh
+   5          * @version 01.00
+   6          * @date    30-MAR-2018
+   7          * @brief   This is a peripheral interface for Cortex M0 SysTick timer.
+   8          *       + SysTick_Init initializes this inbuilt timer to generate an interrupt
+   9          *         every 1 milisecond
+  10          *       + A free running timer is included which can be used as a generic
+  11          *         timer for time crucial functions.
+  12          *
+  13          ******************************************************************************
+  14          * @attention
+  15          * @{
+  16          * <h2><center>&copy; Copyright 2017 Marjan Solar </center></h2>
+  17          *                     All rights reserved.
+  18          * An unpublished work by Petrotec  Limited . This material contains
+  19          * CONFIDENTIAL INFORMATION that is the property of Petrotec  Limited .
+  20          * Any unauthorized use, duplication or disclosure is prohibited.
+  21          * @}
+  22          ******************************************************************************
+  23          */
+  24          
+  25          /*
+  26          *******************************************************************************
+  27          *                               FILE HISTORY
+  28          *******************************************************************************
+  29          * Change    : 01
+  30          * Author    : Nasreen Shaikh
+  31          * Date      : 30-MAR-2018
+  32          * Brief     : created file
+  33          *
+  34          *******************************************************************************
+  35          */
+  36          
+  37          /*
+  38          *******************************************************************************
+  39          *                           PRIVATE INCLUDES
+  40          *******************************************************************************
+  41          */
+  42          
+  43          #include "sys_tick.h"
+  44          
+  45          
+  46          /*
+  47          *******************************************************************************
+  48          *                          PRIVATE MACROS                                
+  49          *******************************************************************************
+  50          */
+  51          
+  52          #define FREE_TIMER_MAX_COUNT          (0xFFFFFFFFUL)
+  53          
+C51 COMPILER V9.60.0.0   SYS_TICK                                                          03/23/2022 11:03:06 PAGE 2   
+
+  54          
+  55          #define    T0_50MSL         0x00                 // ( 65536 - 46080 )%256 in 11.0592Mhz
+  56          #define    T0_50MSH         0x4C                 // ( 65536 - 46080 )/256 in 11.0592Mhz
+  57          #define    T0_TIMEROUT      60                   // 60*50ms = 3s
+  58          /*
+  59          *******************************************************************************
+  60          *                         PRIVATE VARIABLE DECLARATION
+  61          *******************************************************************************
+  62          */
+  63          
+  64          static uint32_t free_running_timer = 0;
+  65          
+  66          /*
+  67          *******************************************************************************
+  68          *                         PRIVATE FUNCTION DECLARATION
+  69          *******************************************************************************
+  70          */
+  71          
+  72          // None
+  73          
+  74          /**
+  75          ******************************************************************************
+  76          * @fn void SysTick_Init(void)
+  77          ******************************************************************************
+  78          * @brief  Initialize the Hardware timer for the 1msec interval.
+  79          * @note   None
+  80          * @param  None
+  81          * @retval None
+  82          ******************************************************************************
+  83          */
+  84          
+  85          void SysTick_Init(void) 
+  86          {
+  87   1        TMOD |= 0x01;                                  // Set Timer0 in mode 1, 16bit timer/counter Mode
+  88   1        TL0 = T0_50MSL;
+  89   1        TH0 = T0_50MSH;
+  90   1      
+  91   1      }// End of SysTick_Init
+  92          
+  93          /**
+  94          ******************************************************************************
+  95          * @fn uint32_t SysTick_GetFreeRunningTimer(void)
+  96          ******************************************************************************
+  97          * @brief  Return the current value of timer.
+  98          * @note   None
+  99          * @param  None
+ 100          * @retval free_running_timer: Current value of timer
+ 101          ******************************************************************************
+ 102          */
+ 103          
+ 104          uint32_t SysTick_GetFreeRunningTimer(void)
+ 105          {
+ 106   1        return(free_running_timer);
+ 107   1      }// End of SysTick_GetFreeRunningTimer
+ 108          
+ 109          
+ 110          /**
+ 111          ******************************************************************************
+ 112          * @fn bool_t SysTick_IsTimeOutOccurred(uint32_t *prvs_timer_ptr, uint32_t timeout_period)
+ 113          ******************************************************************************
+ 114          * @brief  This routine checks the timer variable with current timer and the updates
+ 115          *       the status of timeout flag. In case of timer the ui_prcs timer
+C51 COMPILER V9.60.0.0   SYS_TICK                                                          03/23/2022 11:03:06 PAGE 3   
+
+ 116          *       variable is updated with current timer for next interval.
+ 117          * @note   None
+ 118          * @param  None
+ 119          * @retval is_time_out_occured: TRUE => If timeout occurred
+ 120                                         FALSE=> If no Timeout
+ 121          ******************************************************************************
+ 122          */
+ 123          
+ 124          bool_t SysTick_IsTimeOutOccurred(uint32_t *prvs_timer_ptr, uint32_t timeout_period)
+ 125          {
+ 126   1        uint32_t timer_difference = 0;
+ 127   1        bool_t is_time_out_occured = FALSE;
+ 128   1        
+ 129   1        timer_difference = (free_running_timer - *prvs_timer_ptr);
+ 130   1      
+ 131   1        if(timer_difference > timeout_period)
+ 132   1        {
+ 133   2          is_time_out_occured = TRUE;
+ 134   2          *prvs_timer_ptr = free_running_timer;
+ 135   2        }
+ 136   1        else
+ 137   1        {
+ 138   2          is_time_out_occured = FALSE;
+ 139   2        }
+ 140   1        
+ 141   1        return(is_time_out_occured);
+ 142   1      } // End of SysTick_IsTimeOutOccurred
+ 143          
+ 144          /**
+ 145          ******************************************************************************
+ 146          * @fn void SysTick_Handler(void)
+ 147          ******************************************************************************
+ 148          * @brief  SysTick_Handler of module.
+ 149          *       Increments the free running timer on each timer interrupt.
+ 150          * @note   None
+ 151          * @param  None
+ 152          * @retval None
+ 153          ******************************************************************************
+ 154          */
+ 155          #ifdef C51_COMPILER
+ 156          void INT_TIMER0(void) interrupt 1 using 2 // Timer0 Interrupt
+ 157          #else
+              void INT_TIMER0(void) __interrupt (1)  // Timer0 Interrupt
+              #endif
+ 160          {
+ 161   1        TL0 = T0_50MSL;
+ 162   1        TH0 = T0_50MSH;
+ 163   1        //--> Increment free running timer
+ 164   1        free_running_timer++;
+ 165   1      
+ 166   1      }//End of INT_TIMER0
+ 167          
+ 168          
+ 169          
+ 170          /*-------------------------------END OF FILE----------------------------------*/
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    255    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     16    ----
+   PDATA SIZE       =   ----    ----
+C51 COMPILER V9.60.0.0   SYS_TICK                                                          03/23/2022 11:03:06 PAGE 4   
+
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

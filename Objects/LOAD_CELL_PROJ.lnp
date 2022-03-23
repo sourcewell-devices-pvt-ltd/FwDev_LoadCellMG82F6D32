@@ -1,0 +1,12 @@
+".\Objects\comm_prcs.obj",
+".\Objects\HX710.obj",
+".\Objects\iap.obj",
+".\Objects\main.obj",
+".\Objects\sys_init.obj",
+".\Objects\sys_tick.obj",
+".\Objects\uart0.obj",
+".\Objects\I2c.obj" 
+TO ".\Objects\LOAD_CELL_PROJ" 
+PRINT(".\Listings\LOAD_CELL_PROJ.m51") RAMSIZE(256) 
+CODE( 0X0000-0X7FFF )
+XDATA( 0X0000-0X0EFF )
